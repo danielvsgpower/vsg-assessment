@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { jsPDF } from 'jspdf';
 
 export default function VSGAssessment() {
   const [currentSection, setCurrentSection] = useState(0);
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [name, setName] = useState('');
+  const [generating, setGenerating] = useState(false);
 
   const sections = [
     {
@@ -89,7 +91,134 @@ export default function VSGAssessment() {
 
     return body;
   };
+  const generatePDF = async () => {
+  setGenerating(true);
+  
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
 
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 20;
+  const contentWidth = pageWidth - (margin * 2);
+  let yPosition = margin;
+
+  const primaryColor = [30, 64, 175];
+  const darkText = [30, 41, 59];
+  const lightText = [100, 116, 139];
+  const accentBg = [241, 245, 249];
+
+  const checkNewPage = (neededSpace) => {
+    if (yPosition + neededSpace > pageHeight - margin) {
+      pdf.addPage();
+      yPosition = margin;
+      return true;
+    }
+    return false;
+  };
+
+  const wrapText = (text, maxWidth, fontSize) => {
+    pdf.setFontSize(fontSize);
+    const lines = pdf.splitTextToSize(text || '(not answered)', maxWidth);
+    return lines;
+  };
+
+  // Header
+  pdf.setFillColor(...primaryColor);
+  pdf.rect(0, 0, pageWidth, 45, 'F');
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(24);
+  pdf.text('VSG POWER', margin, 20);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(11);
+  pdf.text('Week 1 Assessment', margin, 28);
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'bold');
+  const nameText = name || 'Unknown';
+  const nameWidth = pdf.getTextWidth(nameText);
+  pdf.text(nameText, pageWidth - margin - nameWidth, 20);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(10);
+  const dateText = new Date().toLocaleDateString('en-US', { 
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+  });
+  const dateWidth = pdf.getTextWidth(dateText);
+  pdf.text(dateText, pageWidth - margin - dateWidth, 28);
+  pdf.setDrawColor(255, 255, 255);
+  pdf.setLineWidth(0.5);
+  pdf.line(margin, 35, pageWidth - margin, 35);
+
+  yPosition = 55;
+
+  // Intro
+  pdf.setTextColor(...lightText);
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'italic');
+  const introText = 'This assessment demonstrates understanding of VSG Power, the Core 4 framework, and the internship program objectives.';
+  const introLines = wrapText(introText, contentWidth, 10);
+  pdf.text(introLines, margin, yPosition);
+  yPosition += (introLines.length * 5) + 10;
+
+  // Sections
+  sections.forEach((section) => {
+    if (section.questions.length === 0) return;
+    checkNewPage(25);
+    pdf.setFillColor(...accentBg);
+    pdf.roundedRect(margin, yPosition - 2, contentWidth, 10, 2, 2, 'F');
+    pdf.setTextColor(...primaryColor);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(12);
+    pdf.text(section.title, margin + 4, yPosition + 5);
+    yPosition += 15;
+
+    section.questions.forEach((question) => {
+      checkNewPage(30);
+      pdf.setTextColor(...darkText);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(10);
+      const questionLines = wrapText(question.label, contentWidth - 5, 10);
+      pdf.text(questionLines, margin, yPosition);
+      yPosition += (questionLines.length * 4.5) + 3;
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...darkText);
+      pdf.setFontSize(10);
+      const answer = answers[question.id] || '(not answered)';
+      const answerLines = wrapText(answer, contentWidth - 5, 10);
+      const answerHeight = answerLines.length * 4.5;
+      checkNewPage(answerHeight + 10);
+      pdf.setFillColor(249, 250, 251);
+      pdf.roundedRect(margin, yPosition - 3, contentWidth, answerHeight + 6, 1, 1, 'F');
+      pdf.setFillColor(...primaryColor);
+      pdf.rect(margin, yPosition - 3, 2, answerHeight + 6, 'F');
+      pdf.setTextColor(...darkText);
+      pdf.text(answerLines, margin + 6, yPosition + 1);
+      yPosition += answerHeight + 12;
+    });
+    yPosition += 5;
+  });
+
+  // Footer
+  const footerY = pageHeight - 15;
+  pdf.setDrawColor(...primaryColor);
+  pdf.setLineWidth(0.3);
+  pdf.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
+  pdf.setTextColor(...lightText);
+  pdf.setFontSize(8);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('VSG Power Internship Program', margin, footerY);
+  const pageNumText = `Generated on ${new Date().toLocaleString()}`;
+  const pageNumWidth = pdf.getTextWidth(pageNumText);
+  pdf.text(pageNumText, pageWidth - margin - pageNumWidth, footerY);
+
+  const fileName = `VSG_Assessment_${name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+  pdf.save(fileName);
+  setGenerating(false);
+};
   const handleSubmit = () => {
     if (!name.trim()) {
       alert('Please enter your name before submitting.');
@@ -129,13 +258,37 @@ export default function VSGAssessment() {
 
           <div className="space-y-3">
             <button
-              onClick={copyToClipboard}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+              onClick={generatePDF}
+              disabled={generating}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              Copy to Clipboard
+              {generating ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Generating PDF...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Download PDF
+                </>
+              )}
             </button>
+            
+            <button
+              onClick={copyToClipboard}
+              className="w-full py-3 bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition"
+            >
+              Copy as Text
+            </button>
+            
             <p className="text-center text-slate-500 text-sm">
-              Copy and paste this into an email or Slack message to Daniel.
+              Download the PDF and email it to Daniel, or copy the text version.
             </p>
             <button
               onClick={() => setSubmitted(false)}
