@@ -15,11 +15,12 @@ export default function VSGAssessment() {
       title: "Part A: The Core 4 Framework",
       questions: [
         { id: "core4_list", label: "1. What are the four parts of VSG's Core 4 framework? List them.", type: "textarea" },
-        { id: "core4_generate", label: "2a. For Generate Power, name one specific service VSG offers:", type: "text" },
-        { id: "core4_store", label: "2b. For Store Power, name one specific service VSG offers:", type: "text" },
-        { id: "core4_upgrade", label: "2c. For Upgrade Power, name one specific service VSG offers:", type: "text" },
-        { id: "core4_maintain", label: "2d. For Maintain Power, name one specific service VSG offers:", type: "text" },
-        { id: "core4_scenario", label: "3. A homeowner wants to keep the lights on during power outages. Which Core 4 areas are most relevant and why?", type: "textarea" }
+        { id: "core4_purpose", label: "2. What is the PURPOSE of the Core 4 framework? Why does VSG use it?", type: "textarea" },
+        { id: "core4_generate", label: "2a. For Generate Power, name one or more specific service VSG offers:", type: "text" },
+        { id: "core4_store", label: "2b. For Store Power, name one or more specific service VSG offers:", type: "text" },
+        { id: "core4_upgrade", label: "2c. For Upgrade Power, name one or more specific service VSG offers:", type: "text" },
+        { id: "core4_maintain", label: "2d. For Maintain Power, name one or more specific service VSG offers:", type: "text" },
+        { id: "core4_scenario", label: "3. A homeowner wants to keep the lights on during power outages. Which one of the Core 4 are most relevant and why?", type: "textarea" }
       ]
     },
     {
@@ -35,7 +36,7 @@ export default function VSGAssessment() {
       questions: [
         { id: "weeks1_4_skill", label: "7. What is the core skill we're building in Weeks 1-4? Why does it matter?", type: "textarea" },
         { id: "your_role", label: "8. What is YOUR assigned role on the team? What does that mean you're responsible for?", type: "textarea" },
-        { id: "week6_deliverable", label: "9. What's one concrete deliverable you'll create by Week 6 that will be live on VSG's website?", type: "textarea" }
+        { id: "week6_deliverable", label: "9. What is 1 action you're going to implement into your business based on everything we've covered?", type: "textarea" }
       ]
     },
     {
